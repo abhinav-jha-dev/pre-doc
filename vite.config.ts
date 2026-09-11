@@ -1,4 +1,6 @@
 import vinext from "vinext";
+import {localIntake} from "./build/local-intake";
+import {localSpeech} from "./build/local-speech";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
@@ -53,6 +55,8 @@ export default defineConfig(async () => {
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
+      localSpeech(),
+      localIntake(),
       vinext(),
       sites(),
       cloudflare({

@@ -75,3 +75,14 @@ Interface text, system descriptions, and the per-structure descriptions in Arabi
 ## Human Atlas application integration
 
 This application uses the packed reference assets distributed by https://github.com/slorksmo/Human-Atlas, based on https://github.com/ashemag/human-atlas. Original geometry, source identifiers and the upstream packing adaptations described above are retained. Runtime adaptations in this application: anatomical system regrouping, new material colors, opacity, selection highlights, lighting and camera presentation. No source vertex changes are made. Male-derived bones and supplemental female donor muscles are optional and disabled by default. Pregnancy reference meshes are not displayed. The original full attribution is retained above for all distributed data.
+
+Earlier viewer configuration (superseded below): the 180 male-derived bones, 76 separate-donor female muscles and 8 pregnancy structures are excluded from the loaded female reference. Their archive data and original credits remain preserved, but they cannot be enabled, searched or counted in the current interface. The visible female reference contains 956 segmented mesh elements. Skin uses source geometry without reshaping.
+
+Current adapted-reference mode: Following user authorization, the 180 pre-fitted male-derived bone pieces and 76 pre-fitted muscles from a separate female donor are available and enabled by default. Their existing geometry and upstream fitting are preserved. The user can disable all adapted additions. Native female pelvic and reproductive geometry is retained; the 8 pregnancy structures remain excluded. Total selectable female-view elements: 1,212 (956 source-reference + 256 adapted). Adaptations are educational and have not been clinically validated.
+
+## Conversation, speech and report dependencies
+
+- WebLLM (`@mlc-ai/web-llm`): Apache-2.0, https://github.com/mlc-ai/web-llm. Browser model: MLC Qwen2.5-1.5B-Instruct quantization, downloaded at user request from its registered model URL. See the model distribution for model licensing.
+- `@andresaya/edge-tts` 1.8.0: GPL-3.0-only, https://github.com/andresayac/edge-tts. Used by the local Node speech adapter. This is a community package accessing Microsoft Edge online speech, not an official Microsoft SDK. Review distribution obligations before redistributing the combined application.
+- Noto Sans Regular: SIL Open Font License 1.1. Font and license bundled under `/fonts/`. Source: https://github.com/notofonts/noto-fonts.
+- jsPDF: MIT, https://github.com/parallax/jsPDF.

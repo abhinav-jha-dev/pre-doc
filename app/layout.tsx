@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Human Atlas — Interactive Anatomy",
+  title: "PreDoc — Know Your Body",
   description: "Explore male and female anatomy in 3D, isolate body systems, and learn about structures and pain locations.",
   other: {
     "codex-preview": "development",

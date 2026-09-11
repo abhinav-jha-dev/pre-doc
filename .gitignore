@@ -43,3 +43,9 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# Generated PDF layout checks
+/tmp/pdfs/
+
+/dist-pages/
+*.tsbuildinfo

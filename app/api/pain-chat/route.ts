@@ -1,0 +1,1 @@
+export async function POST(){return Response.json({error:'The local assistant runs with npm run dev and Ollama. This Worker-only server has no local model connection.'},{status:503,headers:{'Cache-Control':'no-store'}});}

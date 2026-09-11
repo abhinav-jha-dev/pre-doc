@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),cache={};
+function load(name){if(cache[name])return cache[name];const file=new URL('../app/atlas/'+name+'.ts',import.meta.url);const source=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;const mod={exports:{}};vm.runInNewContext(source,{exports:mod.exports,module:mod,require:n=>n.startsWith('./')?load(n.slice(2)):require(n),fetch,Uint8Array,btoa,Date,console});return cache[name]=mod.exports;}
+const i=load('intake'),d=load('intakeDialogue');
+const user=content=>({role:'user',content}),assistant=content=>({role:'assistant',content});
+const transcript=[user('My lower back is mostly inside the number part')];
+const raw=i.emptyFacts();raw.onset={value:transcript[0].content,evidence:transcript[0].content};raw.other={value:'mostly inside the number part',evidence:'mostly inside the number part'};
+raw.quality={value:'inside the number part',evidence:'inside the number part'};
+let facts=i.groundedFacts(raw,transcript);assert.equal(facts.quality.value,null);
+assert.equal(facts.region.value,'Lower back');assert.equal(facts.onset.value,null);assert.equal(facts.other.value,null);assert.equal(facts.side.value,null);
+assert.equal(i.nextQuestion(facts,transcript),d.lumbarClarification);
+assert(d.isClarificationAnswer([...transcript,assistant(d.lumbarClarification)],'yes'));
+assert(!d.isClarificationAnswer([...transcript,assistant(d.lumbarClarification)],'no'));
+transcript.push(assistant(d.lumbarClarification),user('Yes'));
+assert.equal(i.nextQuestion(facts,transcript),d.detailQuestions.severity);
+transcript.push(assistant(d.detailQuestions.severity),user('six'));
+facts=i.groundedFacts(i.emptyFacts(),transcript);assert.equal(facts.severity.value,'6');
+assert.equal(i.nextQuestion(facts,transcript),d.detailQuestions.onset);
+transcript.push(assistant(d.detailQuestions.onset),user('since yesterday'));
+facts=i.groundedFacts(i.emptyFacts(),transcript);assert.equal(facts.onset.value,'since yesterday');
+transcript.push(user('Actually it is 3 out of 10'));
+facts=i.groundedFacts(i.emptyFacts(),transcript);assert.equal(facts.severity.value,'3');
+assert.equal(i.groundedFacts(i.emptyFacts(),[user('six')]).severity.value,null);
+assert.notEqual(i.nextQuestion(facts,transcript),'Anything else to add, or shall we locate the pain?');
+console.log('Dictation clarification, field meaning, contextual ratings, correction precedence and targeted questions passed.');
+
+const saved={id:'intake-test',sex:'male',patientIntakeStep:1,patient:{name:'Test Patient',contact:'test@example.invalid',emergencyContacts:'Example contact',pastDiagnoses:'Previous condition',conditions:'Current condition',procedures:'Previous operation',medications:'Example medicine; dose unknown'},messages:[],facts:i.emptyFacts(),stage:'describe',point:null,updatedAt:new Date().toISOString()};
+assert.equal(i.readIntake(JSON.stringify(saved)).patientIntakeStep,1);
+assert.equal(i.readIntake(JSON.stringify(saved)).patient.contact,'test@example.invalid');
+assert.throws(()=>i.readIntake(JSON.stringify({...saved,patientIntakeStep:4})));
+assert.throws(()=>i.readIntake(JSON.stringify({...saved,patient:{unexpected:'x'}})));
+assert.equal(i.readIntake(JSON.stringify({...saved,patientIntakeStep:3,patient:{}})).patientIntakeStep,3);
+console.log('Optional intake persistence, skipped fields and invalid step rejection passed.');

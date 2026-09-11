@@ -1,0 +1,13 @@
+export type SpeechResult=ArrayLike<{transcript:string}>&{isFinal:boolean};
+export type Recognition={lang:string;continuous:boolean;interimResults:boolean;onresult:((e:{resultIndex:number;results:ArrayLike<SpeechResult>})=>void)|null;onerror:((e:{error:string})=>void)|null;onend:(()=>void)|null;start:()=>void;stop:()=>void;abort:()=>void};
+type Callbacks={onFinal:(text:string)=>void;onInterim:(text:string)=>void;onListening:(value:boolean)=>void;onError:(message:string)=>void};
+export function startDictation(C:new()=>Recognition,callbacks:Callbacks){
+ let wanted=true,disposed=false,current:Recognition|null=null,timer:ReturnType<typeof setTimeout>|null=null,emptyEnds=0;
+ function finish(){wanted=false;if(timer)clearTimeout(timer);timer=null;callbacks.onListening(false);callbacks.onInterim('');}
+ function begin(){if(!wanted||disposed)return;const r=new C();current=r;let received=false;const committed=new Set<number>();r.lang='en-US';r.continuous=true;r.interimResults=true;
+ r.onresult=e=>{if(disposed||current!==r)return;let interim='';for(let i=0;i<e.results.length;i++){const result=e.results[i];if(result.isFinal){if(i>=e.resultIndex&&!committed.has(i)){committed.add(i);const text=result[0].transcript.trim();if(text){received=true;emptyEnds=0;callbacks.onFinal(text);}}}else interim+=result[0].transcript+' ';}callbacks.onInterim(wanted?interim.trim():'');};
+ r.onerror=e=>{if(disposed||current!==r||!wanted)return;if(e.error==='no-speech')return;finish();const messages:Record<string,string>={'not-allowed':'Microphone permission was denied. Allow microphone access before trying again.','service-not-allowed':'This browser does not allow its dictation service. Try a supported browser.','audio-capture':'No microphone is available. Check your microphone connection.','network':'The browser speech service lost its connection. Your captured text is kept; press Dictate to retry.','aborted':'Dictation was interrupted by the browser. Your captured text is kept.'};callbacks.onError(messages[e.error]||`Dictation stopped (${e.error}). Your captured text is kept.`);};
+ r.onend=()=>{if(disposed||current!==r)return;current=null;callbacks.onInterim('');if(!wanted){callbacks.onListening(false);return;}emptyEnds=received?0:emptyEnds+1;if(emptyEnds>=3){finish();callbacks.onError('Dictation paused after repeated silence. Press Dictate when you’re ready to continue.');return;}timer=setTimeout(()=>{timer=null;begin();},300);};
+ try{r.start();callbacks.onListening(true);}catch{finish();callbacks.onError('Could not start dictation. Check microphone access and try again.');}}
+ begin();return {stop(){finish();current?.stop();},dispose(){disposed=true;wanted=false;if(timer)clearTimeout(timer);timer=null;current?.abort();current=null;}};
+}
