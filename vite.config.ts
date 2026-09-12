@@ -1,3 +1,4 @@
+import apiDeployment from './deployment/api.json';
 import vinext from "vinext";
 import {localIntake} from "./build/local-intake";
 import {localSpeech} from "./build/local-speech";
@@ -51,6 +52,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    define:{__PREDOC_API_URL__:JSON.stringify(process.env.PREDOC_API_URL||apiDeployment.url)},
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

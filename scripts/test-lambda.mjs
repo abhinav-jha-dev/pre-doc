@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {handler} from '../dist-lambda/index.mjs';
+process.env.GROQ_API_KEY='test-only';process.env.PREDOC_ACCESS_TOKEN='x'.repeat(40);
+const event={headers:{origin:'http://localhost:5173',authorization:'Bearer '+process.env.PREDOC_ACCESS_TOKEN},requestContext:{http:{method:'POST'}},body:JSON.stringify({messages:[{role:'user',content:'My lower back aches, four out of ten.'}]})};
+let calls=0;global.fetch=async()=>{calls++;return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(Object.fromEntries(['region','side','quality','severity','onset','triggers','radiation','other'].map(k=>[k,{value:null,evidence:null}])) )}}]}));};
+assert.equal((await handler({...event,headers:{origin:'http://localhost:5173'}})).statusCode,401);
+assert.equal((await handler({...event,headers:{...event.headers,origin:'https://untrusted.invalid'}})).statusCode,403);
+assert.equal((await handler({...event,body:'invalid'})).statusCode,400);
+assert.equal((await handler({...event,body:JSON.stringify({messages:[],patient:{name:'Not allowed'}})})).statusCode,400);
+assert.equal((await handler({...event,body:'x'.repeat(40001)})).statusCode,413);
+assert.equal(calls,0);
+const result=await handler(event);assert.equal(result.statusCode,200);assert.equal(JSON.parse(result.body).facts.severity.value,'4');assert.equal(result.headers['Access-Control-Allow-Origin'],'http://localhost:5173');
+global.fetch=async()=>new Response('',{status:429});assert.equal((await handler(event)).statusCode,429);
+global.fetch=async()=>new Response('not JSON');assert.equal((await handler(event)).statusCode,502);
+console.log('Lambda authentication, CORS, payload limits, grounded facts, provider errors and quota responses passed.');
